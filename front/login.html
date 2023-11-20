@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录</title>
+    <link rel="stylesheet" href="./css/login.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <div class="login">
+        <!-- 登录页面 -->
+        <h1>登录</h1>
+        <form id="login-form">
+            <!-- 用户名 -->
+            <div class="username">
+                <label for="username">用户名：</label>
+                <input type="text" id="username" name="username">
+                <span id="usernameHint"></span>
+            </div>
+            
+            <!-- 密码 -->
+            <div class="password">
+                <label for="password">密码：</label>
+                <input type="password" id="password" name="password">
+                <span id="passwordHint"></span>
+            </div>
+           
+            <!-- 随机验证码 -->
+            <div class="captcha">
+                <input type="text" id="captcha" name="captcha" placeholder="请输入验证码">
+                <img src="http://localhost:81/captcha.php" alt="验证码" id="captcha-img">
+                <a href='javascript:void(0)' id="refresh-btn">看不清，换一张</a>
+                <span id="captchaHint"></span>
+            </div>
+
+            <!-- 提交登录 -->
+            <div class="choice">
+                <input type="submit" id="submit" value="登录">
+                <input type="reset" value="重置">
+            </div>
+        </form>
+        <a href="index.html" id="returnIndex">返回首页</a>
+    </div>
+
+    <div class="hidden-footer">
+
+    </div>
+    
+     <!-- 版权 -->
+     <div class="footer">
+        <div class="wrapper">
+            <p>卿云交易网致力于为用户提供一流的交易服务体验。<br>
+                © 2023年FDU Tch.保留所有权利。-沪ICP备23000001号</p>
+        </div>
+    </div>
+
+    <script>
+        var $ = window.jQuery
+        //验证码
+        // 获取刷新按钮和验证码图片元素
+        var refreshBtn = document.getElementById('refresh-btn');
+        var captchaImg = document.getElementById('captcha-img');
+        // 为刷新按钮添加点击事件
+        refreshBtn.addEventListener('click', function() {
+            // 更新验证码图片的src属性，重新加载验证码图片
+            captchaImg.src = 'http://localhost:81/captcha.php?' + Math.random();
+        });
+
+        //验证表单
+        const usernameInput=document.getElementById("username")
+        const usernameHint=document.getElementById("usernameHint")
+        usernameInput.addEventListener("blur",function(){
+            const username=usernameInput.value
+            if(username==""){
+                usernameHint.textContent="用户名不能为空"
+            }
+            else{
+                usernameHint.textContent=""
+            }
+        })
+        const passwordInput=document.getElementById("password")
+        const passwordHint=document.getElementById("passwordHint")
+        passwordInput.addEventListener("blur",function(){
+            const password=passwordInput.value
+            if(password==""){
+                passwordHint.textContent="密码不能为空"
+            }
+            else{
+                passwordHint.textContent=""
+            }
+        })
+        const captchaInput=document.getElementById("captcha")
+        const captchaHint=document.getElementById("captchaHint")
+        captchaInput.addEventListener("blur",function(){
+            const captcha=captchaInput.value
+            if(captcha==""){
+                captchaHint.innerHTML="验证码不能为空"
+            }
+            else{
+                captchaHint.innerHTML=""
+            }
+        })
+        //登录验证
+        const submitBtn=document.querySelector('#submit')
+        const thresholdTime=3000;
+        var disabled=true;
+        let timerId;
+        submitBtn.addEventListener('click',event=>{
+            // 阻止表单默认提交行为
+            event.preventDefault();
+            if(!disabled){
+                alert("请勿频繁操作！");
+                submitBtn.disabled=true;
+                return;
+            }
+            clearTimeout(timerId);
+            disabled=false;
+            timerId=setTimeout(()=>{
+                disabled=true;
+                submitBtn.disabled=false;
+            },thresholdTime);
+            const username=document.getElementById('username').value
+            if(username.trim()==""){
+                alert("用户名不能为空");
+                return
+            }
+            const password=document.getElementById('password').value
+            if(password.trim()==""){
+                alert("密码不能为空");
+                return
+            }
+            const captcha=document.getElementById('captcha').value
+            if(captcha==""){
+                alert("验证码不能为空");
+                return
+            }
+             //ajax发送请求
+             $.ajax({
+                type:'POST',
+                url:'http://localhost:81/login.php',
+                data:{
+                    username:username,
+                    password:password,
+                    captcha:captcha
+                },
+                contentType: 'application/x-www-form-urlencoded',
+                crossDomain: true,
+                xhrFields:{
+                    withCredentials:true
+                },
+                success: function(data) {
+                    // 处理后端返回的数据
+                    var response=JSON.parse(data);
+                    if(response.state==200){
+                        window.location.href = "index.html";
+                    }
+                    else{
+                        alert(response.message);
+                    }
+                },
+                error: function() {
+                    // 处理请求失败的情况
+                    console.log('请求失败');
+                }
+             });
+        });
+    </script>
+</body>
+</html>

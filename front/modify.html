@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>修改</title>
+    <link rel="stylesheet" href="./css/modify.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <!-- 导航栏预留 -->
+    <iframe src="navbar.html" frameborder="0" width="100%" height="100" name="navbar" title="导航栏"></iframe>
+
+    <div class="issue">
+        <!-- 显示图片 -->
+        <div class="left">
+            <p>待修改艺术品的图片预览</p>
+            <div class="preview"></div>
+        </div>
+        <!-- 待发布的艺术品信息输入 -->
+        <div class="right clearfix">
+            <h1>修改</h1>
+            <form id="issue-form" enctype="multipart/form-data">
+                <!-- 艺术品名字 -->
+                <div class="workname">
+                    <label for="workname">艺术品名称：</label>
+                    <input type="text" id="workname" name="workname">
+                    <span id="worknameHint"></span>
+                </div>
+                <!-- 艺术品作者 -->
+                <div class="author">
+                    <label for="author">作者姓名：</label>
+                    <input type="text" id="author" name="author">
+                    <span id="authorHint"></span>
+                </div>
+                <!-- 宽度 -->
+                <div class="width">
+                    <label for="width">艺术品宽度：</label>
+                    <input type="text" id="width" name="width">
+                    <span id="widthHint"></span>
+                </div>
+                <!-- 高度 -->
+                <div class="height">
+                    <label for="height">艺术品高度：</label>
+                    <input type="text" id="height" name="height">
+                    <span id="heightHint"></span>
+                </div>
+                  <!-- 年份 -->
+                  <div class="year">
+                    <label for="year">艺术品年份：</label>
+                    <input type="text" id="year" name="year">
+                    <span id="yearHint"></span>
+                </div>
+                <!-- 价格 -->
+                <div class="price">
+                    <label for="price">艺术品价格：</label>
+                    <input type="text" id="price" name="price">
+                    <span id="priceHint"></span>
+                </div>
+                <!-- 简介 -->
+                <div class="introduction">
+                    <label for="introduction">艺术品简介：</label>
+                    <textarea name="introduction" id="introduction" cols="16" rows="8" maxlength="128"></textarea>
+                    <span id="introductionHint"></span>
+                </div>
+                <!-- 风格 -->
+                <div class="style">
+                    <div class="checkbox">
+                        <label class="title">艺术品风格：</label>
+                        <label>
+                            <input type="checkbox" name="style" value="现实主义">现实主义
+                        </label>
+                        <label>
+                            <input type="checkbox" name="style" value="抽象主义">抽象主义
+                        </label>
+                        <label>
+                            <input type="checkbox" name="style" value="表现主义">表现主义
+                        </label>         
+                        <label>
+                            <input type="checkbox" name="style" value="立体主义">立体主义
+                        </label> 
+                        <br>
+                        <label>
+                            <input type="checkbox" name="style" value="极简主义">极简主义
+                        </label> 
+                        <label>
+                            <input type="checkbox" name="style" value="印象派">印象派
+                        </label> 
+                        <label>
+                            <input type="checkbox" name="style" value="后印象派">后印象派
+                        </label> 
+                        <label>
+                            <input type="checkbox" name="style" value="洛可可风格">洛可可风格
+                        </label> 
+                        <label>
+                            <input type="checkbox" name="style" value="其他">其他
+                        </label> 
+                    </div>
+                    <span id="styleHint"></span>
+                </div>
+                <!-- 图片 -->
+                <div class="picture">
+                    <label for="picture">上传图片：</label>
+                    <input type="file" id="picture" name="picture" accept="image/*">
+                </div>
+                 <!-- 提交发布 -->
+                <div class="choice">
+                    <input type="submit" value="提交">
+                    <input type="reset" value="重置">
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="hidden-footer">
+
+    </div>
+    
+     <!-- 版权 -->
+     <div class="footer">
+        <div class="wrapper">
+            <p>卿云交易网致力于为用户提供一流的交易服务体验。<br>
+                © 2023年FDU Tch.保留所有权利。-沪ICP备23000001号</p>
+        </div>
+    </div>
+    <script>
+        var $ = window.jQuery
+        //从请求的url中获取艺术品的id
+        const urlSearchParams=new URLSearchParams(window.location.search);
+        const params=Object.fromEntries(urlSearchParams.entries());
+        const id=params.id;
+        //获取艺术品信息
+        $.ajax({
+            type:'POST',
+            url:'http://localhost:81/getArtworkData.php',
+            data:$.param({
+                id:id
+            }),
+            contentType: 'application/x-www-form-urlencoded',
+            crossDomain: true,
+            xhrFields:{
+                withCredentials:true
+            },
+            success: function(data) {
+                // 处理后端返回的数据
+                var response=JSON.parse(data);
+                console.log(response);
+                if(response.state==200){
+                    document.getElementById("workname").value=`${response.data.workname}`;
+                    document.getElementById("author").value=`${response.data.author}`;
+                    document.getElementById("width").value=`${response.data.width}`;
+                    document.getElementById("height").value=`${response.data.height}`;
+                    document.getElementById("price").value=`${response.data.price}`;
+                    document.getElementById("introduction").value=`${response.data.introduction}`;
+                    document.getElementById("year").value=`${response.data.year}`;
+                    var styleList=`${response.data.style}`.split('、');
+                    var checkboxes=document.getElementsByName("style");
+                    for (var i = 0; i < checkboxes.length; i++) {
+                        if (styleList.indexOf(checkboxes[i].value) !== -1) {
+                            checkboxes[i].checked = true;
+                        } 
+                        else {
+                            checkboxes[i].checked = false;
+                        }
+                    }
+                    const preview=document.querySelector('.preview')
+                    preview.style.backgroundImage=`url(${response.data.imagePath})`
+                }
+                else{
+                    //alert(data.message);
+                    window.location.href="exception.html";
+                }
+            },
+            error: function() {
+                // 处理请求失败的情况
+                //console.log('请求失败');
+                window.location.href="exception.html";
+            }
+        });
+        //图片加载
+        const fileInput=document.querySelector('.picture input[type=file]')
+        const preview=document.querySelector('.preview')
+        fileInput.addEventListener('change',()=>{
+            const file=fileInput.files[0]
+            if(file){
+                const reader=new FileReader()
+                reader.addEventListener('load',()=>{
+                    preview.style.backgroundImage = `url(${reader.result})`
+                })
+                reader.readAsDataURL(file)
+            }
+        })
+        // 表单验证
+        // 艺术品名称
+        const worknameInput=document.getElementById('workname')
+        const worknameHint=document.getElementById('worknameHint')
+        worknameInput.addEventListener('blur',function(){
+            const workname=worknameInput.value
+            if(workname.trim()==""){
+                worknameHint.innerHTML="艺术品名称不能为空"
+            }
+            else{
+                worknameHint.innerHTML=""
+            }
+        })
+        //作者姓名
+        const authorInput=document.getElementById('author')
+        const authorHint=document.getElementById('authorHint')
+        authorInput.addEventListener('blur',function(){
+            const author=authorInput.value
+            if(author.trim()==""){
+                authorHint.innerHTML="作者姓名不能为空"
+            }
+            else{
+                authorHint.innerHTML=""
+            }
+        })
+        // 艺术品宽度
+        const widthInput=document.getElementById('width')
+        const widthHint=document.getElementById('widthHint')
+        widthInput.addEventListener('focus',function(){
+            widthHint.innerHTML="请输入一个正整数"
+        })
+        widthInput.addEventListener('blur',function(){
+            const width=widthInput.value
+            if(width.trim()==""){
+                widthHint.innerHTML="艺术品宽度不能为空"
+            }
+            else{
+                if(!checkSize(width.trim())){
+                    widthHint.innerHTML="艺术品宽度格式不正确"
+                }
+                else{
+                    widthHint.innerHTML=""
+                }
+            }
+        })
+         // 艺术品高度
+        const heightInput=document.getElementById('height')
+        const heightHint=document.getElementById('heightHint')
+        heightInput.addEventListener('focus',function(){
+            heightHint.innerHTML="请输入一个正整数"
+        })
+        heightInput.addEventListener('blur',function(){
+            const height=heightInput.value
+            if(height.trim()==""){
+                heightHint.innerHTML="艺术品高度不能为空"
+            }
+            else{
+                if(!checkSize(height.trim())){
+                    heightHint.innerHTML="艺术品高度格式不正确"
+                }
+                else{
+                    heightHint.innerHTML=""
+                }
+            }
+        })
+         //艺术品年份
+         const yearInput=document.getElementById('year')
+        const yearHint=document.getElementById('yearHint')
+        yearInput.addEventListener('focus',function(){
+            yearHint.innerHTML="艺术品年份为不大于2023的四位数"
+        })
+        yearInput.addEventListener('blur',function(){
+            const year=yearInput.value
+            if(year.trim()==""){
+                yearHint.innerHTML="艺术品年份不能为空"
+            }
+            else{
+                if(!checkYear(year.trim())){
+                    yearHint.innerHTML="艺术品年份格式不正确"
+                }
+                else{
+                    yearHint.innerHTML=""
+                }
+            }
+        })
+        // 艺术品价格
+        const priceInput=document.getElementById('price')
+        const priceHint=document.getElementById('priceHint')
+        priceInput.addEventListener('focus',function(){
+            priceHint.innerHTML="请输入一个保留至小数点后两位的正数"
+        })
+        priceInput.addEventListener('blur',function(){
+            const price=priceInput.value
+            if(price.trim()==""){
+                priceHint.innerHTML="艺术品价格不能为空"
+            }
+            else{
+                if(!checkPrice(price.trim())){
+                    priceHint.innerHTML="艺术品价格格式不正确"
+                }
+                else{
+                    priceHint.innerHTML=""
+                }
+            }
+        })
+        // 艺术品简介
+        const introductionInput=document.getElementById('introduction')
+        const introductionHint=document.getElementById('introductionHint')
+        introductionInput.addEventListener('focus',function(){
+            introductionHint.innerHTML="艺术品简介不超过128个字符"
+        })
+        introductionInput.addEventListener('input',function(){
+            const introduction=introductionInput.value
+            introductionHint.innerHTML=`${introduction.trim().length}/128`
+        })
+        introductionInput.addEventListener('blur',function(){
+            const introduction=introductionInput.value
+            if(introduction.trim()==""){
+                introductionHint.innerHTML="艺术品简介不能为空"
+            }
+            else{
+                introductionHint.innerHTML=""
+            }
+        })
+        //提交验证
+        const form=document.querySelector('form')
+        const confirmation = document.querySelector('#confirmation')
+        form.addEventListener('submit',event=>{
+            // 阻止表单默认提交行为
+            event.preventDefault();
+            const workname=worknameInput.value
+            if(workname.trim()==""){
+                alert("艺术品名称不能为空");
+                return;
+            }
+            const author=authorInput.value
+            if(author.trim()==""){
+                alert("作者姓名不能为空");
+                return;
+            }
+            const width=widthInput.value
+            if(width.trim()==""){
+                alert("艺术品宽度不能为空");
+                return;
+            }
+            if(!checkSize(width.trim())){
+                alert("艺术品宽度格式不正确");
+                return;
+            }
+            const height=heightInput.value
+            if(height.trim()==""){
+                alert("艺术品高度不能为空");
+                return;
+            }
+            if(!checkSize(height.trim())){
+                alert("艺术品高度格式不正确");
+                return;
+            }
+            const year=yearInput.value
+            if(year.trim()==""){
+                alert("艺术品年份不能为空");
+                return;
+            }
+            if(!checkYear(year)){
+                alert("艺术品年份格式不正确");
+                return;
+            }
+            const price=priceInput.value
+            if(price.trim()==""){
+                alert("艺术品价格不能为空");
+                return;
+            }
+            if(!checkPrice(price.trim())){
+                alert("艺术品价格格式不正确");
+                return;
+            }
+            const introduction=introductionInput.value
+            if(introduction.trim()==""){
+                alert("艺术品简介不能为空");
+                return;
+            }
+            const styleHint=document.getElementById('styleHint')
+            var checkbox=document.querySelectorAll(".style input[name='style']")
+            var checkedStyle=[];
+            var checked=0
+            for(var i=0;i<checkbox.length;i++){
+                if(checkbox[i].checked){
+                    checked++
+                    checkedStyle.push(checkbox[i].value);
+                }
+            }
+            if(checked>0){
+                styleHint.innerHTML=""
+            }
+            if(checked==0){
+                alert("艺术风格未选择");
+                return;
+            }
+            const fileInput=document.getElementById('picture')
+            const image=fileInput.files[0];
+            const confirmDialog=confirm("确认提交吗？");
+            if(confirmDialog==true){
+                const formData=new FormData();
+                formData.append('id',id);
+                formData.append('workname',workname);
+                formData.append('author',author);
+                formData.append('width',width);
+                formData.append('height',height);
+                formData.append('price',parseFloat(price));
+                formData.append('introduction',introduction);
+                formData.append('year',parseInt(year));
+                formData.append('image',image);
+                formData.append('style',checkedStyle.join('、'));
+                //发送请求
+                $.ajax({
+                    type:'POST',
+                    url:'http://localhost:81/modifyArtwork.php',
+                    data: formData,
+                    contentType: false,
+                    processData: false,
+                    crossDomain: true,
+                    xhrFields:{
+                        withCredentials:true
+                    },
+                    success: function(data) {
+                        // 处理后端返回的数据
+                        var response=JSON.parse(data);
+                        alert(response.message);
+                    },
+                    error: function() {
+                        // 处理请求失败的情况
+                        alert('请求失败');
+                    }
+                });
+            }
+        })
+        // 公用函数
+        // 判断是不是正整数
+        function checkSize(str){
+            var regex=/^[1-9]\d*$/
+            return regex.test(str)
+        }
+        //判断价格
+        function checkPrice(price){
+            var regex=/^\d+\.\d{2}$/
+            return regex.test(price)
+        }
+         //判断年份
+         function checkYear(year){
+            if(parseInt(year)<2023){
+                var regex=/^[12]\d{3}$/
+                return regex.test(year)
+            }
+            return false;
+        }
+    </script>
+</body>
+</html>

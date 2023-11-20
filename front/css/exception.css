@@ -1,0 +1,22 @@
+body {
+    font-family: Arial, sans-serif;
+    max-width: 600px;
+    margin: 0 auto;
+    text-align: center;
+  }
+  
+h1 {
+    font-size: 3em;
+    margin-top: 50px;
+}
+
+p {
+    font-size: 1.2em;
+    margin-bottom: 50px;
+}
+
+a {
+    color: #0066cc;
+    text-decoration: none;
+    font-weight: bold;
+}

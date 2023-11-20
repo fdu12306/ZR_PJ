@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>首页</title>
+    <link rel="stylesheet" href="./css/index.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <iframe src="navbar.html" frameborder="0" width="100%" height="100" name="navbar" title="导航栏"></iframe>
+    <!-- <div class="hidden-header">
+
+    </div> -->
+
+    <!-- 轮播图 -->
+    <div class="banner">
+        <div class="zone">
+            <div class="slider">
+                <div class="slider-wrapper">
+                    <img src="./image/1.jpg" alt="轮播图图片">
+                </div>
+                <div class="slider-footer">
+                    <p>天蓝的像一纸水洗过的情书 温婉律动的音符</p>
+                    <ul class="slider-indicator">
+                        <li class="active"></li>
+                        <li></li>
+                        <li></li>
+                        <li></li>
+                        <li></li>
+                    </ul>
+                    <div class="toggle">
+                        <button class="prev" aria-label="前一个">&lt;</button>
+                        <button class="next" aria-label="下一个">&gt;</div>
+                    </div>
+                </div> 
+            </div>
+        </div>
+    </div>
+
+    <!-- 最新发布 -->
+    <div class="recommendation wrapper">
+        <div class="title">
+            <h1>最新发布</h1>
+        </div>
+
+        <div class="content clearfix">
+            <ul class="list">
+            </ul>
+        </div>
+    </div>
+
+    <!-- 猜你喜欢 -->
+    <div class="like wrapper">
+        <div class="titlelike">
+            <h1>猜你喜欢</h1>
+        </div>
+
+        <div class="contentlike clearfix">
+            <ul class="list">
+            </ul>
+        </div>
+    </div>
+
+    <div class="hidden-footer">
+
+    </div>
+
+    <!-- 版权 -->
+    <div class="footer clearfix">
+        <div class="wrapper">
+            <p>卿云交易网致力于为用户提供一流的交易服务体验。<br>
+                © 2023年FDU Tch.保留所有权利。-沪ICP备23000001号</p>
+        </div>
+    </div>
+
+    <script>
+        var $ = window.jQuery
+        //初始数据
+        const sliderData=[
+            {url:'./image/1.jpg',title:"天蓝的像一纸水洗过的情书 温婉律动的音符"},
+            {url:'./image/2.jpg',title:"风轻得像一场欢愉时的追逐 安抚人间荒芜"},
+            {url:'./image/3.jpg',title:"蝉鸣着聒噪了蒲公英的旅途 迎着风起起伏伏"},
+            {url:'./image/4.jpg',title:"阳光和清澈又透明色的露珠 像你眼眸里的温度"},
+            {url:'./image/5.jpg',title:"我的心是簇拥烈日的花"}
+        ]
+        const img=document.querySelector(".slider-wrapper img")
+        const p=document.querySelector(".slider-footer p")
+        const next=document.querySelector('.next')
+        const prev=document.querySelector('.prev')
+        const footer=document.querySelector('.slider-footer')
+        let i=0
+        // 下一页
+        next.addEventListener('click',function(){
+            i++
+            if(i>=sliderData.length){
+                i=0
+            }
+            toggle()
+        })
+        // 上一页
+        prev.addEventListener('click',function(){
+            i--
+            if(i<0){
+                i=sliderData.length-1
+            }
+            toggle()
+        })
+        //定时器
+        let timerId = setInterval(function(){
+            next.click()
+        },3000)
+        const slider=document.querySelector('.slider')
+        //鼠标进入
+        slider.addEventListener('mouseenter',function(){
+            clearInterval(timerId)
+        })
+        //鼠标离开
+        slider.addEventListener('mouseleave',function(){
+            clearInterval(timerId)
+            timerId = setInterval(function(){
+            next.click()
+        },3000)
+        })
+        //获取最新发布的艺术作品
+        var newestArtwork=new Array();
+        $.ajax({
+            url: 'http://localhost:81/getNewestArtworks.php',
+            type: 'GET',
+            dataType: 'json',
+            crossDomain: true,
+            xhrFields:{
+                withCredentials:true
+            },
+            success: function(data){
+               newestArtwork=data.data;
+               const list=document.querySelector('.content .list')
+                newestArtwork.forEach(data =>{
+                    const li=document.createElement('li')
+                    li.innerHTML=`  <a href="artworkshow.html?id=${data.id}">
+                                    <img src=${data.imagePath} alt="最新发布艺术品图片">
+                                    <h2>《${data.workname}》</h2>
+                                    <h3>作者：${data.author}</h3>
+                                    <h4>价格：${data.price}￥</h4>
+                                    <h5>访问量：${data.visited}</h5>
+                                    </a>`
+                    list.appendChild(li)
+                })
+            },
+            error: function() {
+                // 处理请求失败的情况
+                console.log('请求失败');
+            }
+        })
+        //获取用户推荐商品
+        var likedArtwork=new Array();
+        $.ajax({
+            url: 'http://localhost:81/getLikedArtworks.php',
+            type: 'GET',
+            dataType: 'json',
+            crossDomain: true,
+            xhrFields:{
+                withCredentials:true
+            },
+            success: function(data){
+                likedArtwork=data.data.slice(0,10);
+                const list=document.querySelector('.contentlike .list')
+                likedArtwork.forEach(data =>{
+                    const li=document.createElement('li')
+                    li.innerHTML=`  <a href="artworkshow.html?id=${data.id}">
+                                    <img src=${data.imagePath} alt="最新发布艺术品图片">
+                                    <h2>《${data.workname}》</h2>
+                                    <h3>作者：${data.author}</h3>
+                                    <h4>价格：${data.price}￥</h4>
+                                    <h5>访问量：${data.visited}</h5>
+                                    </a>`
+                    list.appendChild(li)
+                })
+            },
+            error: function() {
+                // 处理请求失败的情况
+                console.log('请求失败');
+            }
+        })
+        //未登录时不显示猜你喜欢
+        const like=document.querySelector('.like');
+        $.ajax({
+            url: 'http://localhost:81/checkLogin.php',
+            type: 'GET',
+            dataType: 'json',
+            crossDomain: true,
+            xhrFields:{
+                withCredentials:true
+            },
+            success: function(data){
+                //var response=JSON.parse(data);
+                //登录成功
+                if(data.logged_in){
+                    like.style.display="block";
+                }
+                else{
+                    like.style.display="none";
+                }
+            },
+            error: function() {
+                // 处理请求失败的情况
+                console.log('请求失败');
+            }
+        })
+        // 公用函数体
+        function toggle(){
+            img.src=sliderData[i].url
+            p.innerHTML=sliderData[i].title
+            document.querySelector('.slider-indicator .active').classList.remove('active')
+            document.querySelector(`.slider-indicator li:nth-child(${i+1})`).classList.add('active')
+        }
+    </script>
+</body>
+</html>

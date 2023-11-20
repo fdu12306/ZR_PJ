@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="./css/navbar.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <title>导航栏</title>
+</head>
+<body>
+     <!-- 头部 -->
+     <div class="header clearfix">
+        <audio src="./bgm/3677616865.mp3" loop controls id="bgm"></audio>
+        <div class="wrapper">
+            <h1>
+                <a href="#">
+                    <img src="./image/logo.png" alt="网站logo">
+                </a>
+            </h1>
+    
+            <!-- 导航 -->
+            <div class="nav">
+                <ul>
+                    <li><a href="index.html" id="index" target="_top">首页</a></li>
+                    <li><a href="usercenter.html" id="usercenter" target="_top" >用户中心</a></li>
+                    <li><a href="shoppinglist.html" id="shoppinglist" target="_top" >购物车</a></li>
+                    <li><a href="issue.html" id="issue" target="_top" >发布</a></li>
+                    <li><a href="login.html" id="login" target="_top" >登录</a></li>
+                    <li><a href="register.html" id="register" target="_top">注册</a></li>
+                    <li><a href="index.html" id="logout" target="_top" >登出</a></li>
+                </ul>
+                <!-- <button id="logout">登出</button> -->
+            </div>
+    
+             <!-- 搜索 -->
+             <div class="search">
+                <input type="text" id="search-input" placeholder="请输入关键词">
+                <a id="search-btn" target="_top"><i class="fas fa-search"></i></a>
+            </div>
+
+             <!-- 用户  -->
+             <div class="user">
+                <span id="welcome"></span>
+            </div>
+        </div>
+    </div>
+    <script>
+        //获取bgm元素
+        var bgm=document.getElementById('bgm');
+        //检查本地存储中是否有bgm的状态
+        var bgmStatus = localStorage.getItem('bgmStatus');
+        var bgmTime=localStorage.getItem('bgmTime');
+        if (bgmStatus === 'paused') {
+            bgm.pause();
+        } else {
+            bgm.play();
+            if(bgmTime){
+                bgm.currentTime=bgmTime;
+            }
+        }
+        // 监听BGM的播放和暂停事件，更新本地存储中的状态
+        bgm.addEventListener('play', function() {
+            var bgmTime=localStorage.getItem('bgmTime');
+            if (bgmTime) {
+                bgm.currentTime = bgmTime;
+            }
+            localStorage.setItem('bgmStatus', 'playing');
+            // 通过window.parent对象与index.html页面中的JavaScript代码进行通信，更新BGM的状态
+            // window.parent.postMessage({bgmStatus: 'playing'}, '*');
+        });
+        bgm.addEventListener('pause', function() {
+            localStorage.setItem('bgmStatus', 'paused');
+            localStorage.setItem('bgmTime', bgm.currentTime);
+            // 通过window.parent对象与index.html页面中的JavaScript代码进行通信，更新BGM的状态
+            // window.parent.postMessage({bgmStatus: 'paused'}, '*');
+        });
+        bgm.addEventListener('timeupdate',function(){
+            localStorage.setItem('bgmTime',bgm.currentTime);
+        })
+        //判断是否登录
+        const welcomeInput=document.getElementById('welcome');
+        const loginBtn=document.getElementById('login');
+        const registerBtn=document.getElementById('register');
+        const usercenterBtn=document.getElementById('usercenter');
+        const issueBtn=document.getElementById('issue');
+        const shoppinglistBtn=document.getElementById('shoppinglist');
+        const logoutBtn=document.getElementById('logout');
+        $.ajax({
+            url: 'http://localhost:81/checkLogin.php',
+            type: 'GET',
+            dataType: 'json',
+            crossDomain: true,
+            xhrFields:{
+                withCredentials:true
+            },
+            success: function(data){
+                //var response=JSON.parse(data);
+                //登录成功
+                if(data.logged_in){
+                    welcomeInput.innerHTML=`欢迎，${data.username}!`;
+                    loginBtn.style.display='none';
+                    registerBtn.style.display='none';
+                    usercenterBtn.style.display='block';
+                    issueBtn.style.display='block';
+                    shoppinglistBtn.style.display='block';
+                    logoutBtn.style.display='block';
+                }
+                else{
+                    welcomeInput.innerHTML="请登录";
+                    loginBtn.style.display='block';
+                    registerBtn.style.display='block';
+                    usercenterBtn.style.display='none';
+                    issueBtn.style.display='none';
+                    shoppinglistBtn.style.display='none';
+                    logoutBtn.style.display='none';
+                }
+            },
+            error: function() {
+                // 处理请求失败的情况
+                console.log('请求失败');
+            }
+        })
+        //登出
+        logoutBtn.addEventListener('click',function(){
+            $.ajax({
+                url:"http://localhost:81/logout.php",
+                type: "GET",
+                dataType: "json",
+                crossDomain: true,
+                xhrFields:{
+                    withCredentials:true
+                },
+                success: function(response) {
+                    console.log(response);
+                    if (response.logged_out) {
+                        // 登出成功，跳转到登录页面 
+                        // window.history.pushState(null, null, "http://localhost:82/login.html");
+                        // window.location.href = "login.html";
+                        location.reload();
+                        console.log("登出成功");
+                    } 
+                    else {
+                        // 登出失败，弹出提示框
+                        alert("登出失败，请稍后再试！");
+                    }
+                },
+                error: function() {
+                    alert("请求失败，请稍后再试！");
+                }
+            });
+        })
+        //点击搜索框后跳转
+        const searchBtn = document.getElementById('search-btn');
+        const searchInput = document.getElementById('search-input');
+        searchBtn.addEventListener('click', function() {
+            const keyword = searchInput.value;
+            // if(keyword.trim()==""){
+            //     alert("请输入关键词");
+            //     return;
+            // }
+            const url = `search.html?content=${keyword.trim()}`;
+            searchBtn.href=url;
+        });
+        //判断是否是搜索页面
+        const currentUrl=window.parent.location.href;
+        if(currentUrl.indexOf('search.html')>=0){
+            searchBtn.style.display="none";
+            searchInput.style.display="none";
+        }
+        else{
+            searchBtn.style.display="block";
+            searchInput.style.display="block";
+        }
+    </script>
+</body>
+</html>

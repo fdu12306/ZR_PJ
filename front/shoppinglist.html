@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>购物车</title>
+    <link rel="stylesheet" href="./css/shoppinglist.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+     <!-- 导航栏预留 -->
+     <iframe src="navbar.html" frameborder="0" width="100%" height="100" name="navbar" title="导航栏"></iframe>
+     
+     <div class="header">
+        <h1>我的购物车</h1>
+     </div>
+     <!-- 订单 -->
+     <div class="list clearfix">
+        <ul class="ul">
+        </ul>
+        <div class="tosettle">
+            <button id="tosettleBtn" aria-label="去结算">去结算</button>
+         </div>
+         <div class="total">
+            <p></p>
+         </div>
+         <div class="settle">
+            <button id="returnBtn" aria-label="返回">返回</button>
+            <button id="settleBtn" aria-label="结算">结算</button>
+         </div>
+     </div>
+
+     <div class="hidden-footer">
+
+     </div>
+     
+     <!-- 版权 -->
+     <div class="footer">
+        <div class="wrapper">
+            <p>卿云交易网致力于为用户提供一流的交易服务体验。<br>
+                © 2023年FDU Tch.保留所有权利。-沪ICP备23000001号</p>
+        </div>
+    </div>
+
+     <script>
+        var $ = window.jQuery;
+        var listData=new Array();
+        //获取购物车数据
+        $.ajax({
+            url: 'http://localhost:81/getShoppinglist.php',
+            type: 'GET',
+            dataType: 'json',
+            crossDomain: true,
+            xhrFields:{
+                withCredentials:true
+            },
+            success: function(data){
+                //var response=JSON.parse(data);
+                //登录成功
+                if(data.logged_in){
+                    if(data.state==200){
+                        listData=data.data;
+                        console.log(listData);
+                        const list=document.querySelector('ul')
+                        for(let i=0;i<listData.length;i++){
+                            const li=document.createElement('li')
+                            li.innerHTML=` 
+                                <div class="checkbox-wrapper">
+                                    <input type="checkbox" class="itemCheckbox" style="display:none" value=${listData[i].id} data-price=${listData[i].price}>
+                                </div>
+                                <h1>${i+1}</h1>
+                                <div class="img">
+                                    <img src=${listData[i].imagePath} alt="艺术品图片">
+                                </div>
+                                <div class="left">
+                                    <h2>《${listData[i].workname}》</h2>
+                                    <h3>作者：${listData[i].author}</h3>
+                                    <h4>价格：${listData[i].price}￥</h3>
+                                </div>
+                                <div class="right">
+                                    <h2>艺术品简介</h2>
+                                    <div class="introduction">
+                                        <p>${listData[i].introduction}</p>
+                                    </div>
+                                    <div class="chioce">
+                                        <a href="artworkshow.html?id=${listData[i].artworkId}">查看详情</a>
+                                        <button class="deleteBtn" data-id=${listData[i].id} aria-label="移出购物车">移出购物车</button>
+                                    </div>
+                                    <span>${judge(listData[i].businessState)}<span>
+                                </div> `
+                            list.appendChild(li)
+                        }
+                        // 获取所有删除按钮元素，并为其绑定点击事件监听器
+                        var deleteButtons = document.querySelectorAll(".deleteBtn");
+                        for (var i = 0; i < deleteButtons.length; i++) {
+                            deleteButtons[i].addEventListener('click',function(event){
+                                const confirmDialog=confirm("确认移出购物车吗？");
+                                if(confirmDialog==true){
+                                    var id=event.target.getAttribute("data-id");//获取id
+                                    // 向后端发送请求
+                                    $.ajax({
+                                        type:'POST',
+                                        url:'http://localhost:81/deleteShoppinglist.php',
+                                        data:{
+                                            id:id
+                                        },
+                                        contentType: 'application/x-www-form-urlencoded',
+                                        dataType: 'json',
+                                        crossDomain: true,
+                                        xhrFields:{
+                                            withCredentials:true
+                                        },
+                                        success: function(data) {
+                                            alert(data.message);
+                                            location.reload();
+                                        },
+                                        error: function() {
+                                            // 处理请求失败的情况
+                                            console.log('请求失败');
+                                        }
+                                    });
+                                }
+                            })
+                        }
+                        //点击去结算后只展示为售出和未下架的艺术品
+                        const tosettle=document.querySelector('.tosettle')
+                        const tosettleBtn=document.querySelector('#tosettleBtn')
+                        const totalselector=document.querySelector('.total')
+                        const total=document.querySelector('.total p')
+                        const settle=document.querySelector('.settle')
+                        const settleBtn=document.querySelector('#settleBtn')
+                        const returnBtn=document.querySelector('#returnBtn')
+                        //去结算按钮
+                        tosettleBtn.addEventListener('click',()=>{
+                            for(let i=0;i<listData.length;i++){
+                                if(listData[i].businessState==1||listData[i].businessState==-1){
+                                    const li=document.querySelector(`.list li:nth-child(${i+1})`)
+                                    li.style.display='none'
+                                }
+                                if(listData[i].businessState==0){
+                                    const checkbox=document.querySelector(`.list li:nth-child(${i+1}) .itemCheckbox`)
+                                    checkbox.style.display="block"
+                                    
+                                }
+                            }
+                            tosettle.style.display='none'
+                            total.innerHTML=`总金额：0￥`
+                            totalselector.style.display='block'
+                            settle.style.display='block'
+                        })
+                        //用户选择艺术品金额相应地发生变化
+                        const checkboxes = document.querySelectorAll('.itemCheckbox');
+                        let totalPrice = 0;
+                        checkboxes.forEach(function(cb) {
+                            cb.addEventListener('change', function() {
+                                const price = Number(cb.dataset.price); // 获取数据属性"data-price"
+                                if (cb.checked) {
+                                    totalPrice += price; // 将价格加入总价
+                                } 
+                                else {
+                                    totalPrice -= price; // 将价格从总价中减去
+                                }
+                                // 更新页面中显示购物车总价的元素
+                                total.innerHTML=`总金额：${totalPrice.toFixed(2)}￥`
+                            });
+                        });
+                        //返回按钮
+                        returnBtn.addEventListener('click',()=>{
+                            for(let i=0;i<listData.length;i++){
+                                if(listData[i].businessState==1||listData[i].businessState==-1){
+                                    const li=document.querySelector(`.list li:nth-child(${i+1})`)
+                                    li.style.display='block'
+                                }
+                                if(listData[i].businessState==0){
+                                    const checkbox=document.querySelector(`.list li:nth-child(${i+1}) .itemCheckbox`)
+                                    checkbox.style.display="none"
+                                }
+                            }
+                            tosettle.style.display='block'
+                            totalselector.style.display='none'
+                            settle.style.display='none'
+                        })
+                        //结算按钮
+                        settleBtn.addEventListener('click',()=>{
+                            const checkboxes=document.querySelectorAll('.itemCheckbox')
+                            var judge=false
+                            var checkedId=[]
+                            var total=0
+                            for(let i=0;i<checkboxes.length;i++){
+                                if(checkboxes[i].checked){
+                                    judge=true
+                                    total+=Number(checkboxes[i].dataset.price)
+                                    checkedId.push(checkboxes[i].value)
+                                }
+                            }
+                            if(!judge){
+                                alert("未选择待结算的艺术品！");
+                                return;
+                            }
+                            const confirmDialog=confirm("确认结算吗？");
+                            if(confirmDialog==true){
+                                //发送结算请求
+                                $.ajax({
+                                        type:'POST',
+                                        url:'http://localhost:81/settle.php',
+                                        data:{
+                                            id:checkedId.join(','),
+                                            total:total
+                                        },
+                                        contentType: 'application/x-www-form-urlencoded',
+                                        dataType: 'json',
+                                        crossDomain: true,
+                                        xhrFields:{
+                                            withCredentials:true
+                                        },
+                                        success: function(data) {
+                                            alert(data.message);
+                                            location.reload();
+                                        },
+                                        error: function() {
+                                            // 处理请求失败的情况
+                                            console.log('请求失败');
+                                        }
+                                    });
+                            }
+                        })
+                    }
+                }
+                //未登录
+                else{
+                    window.location.href = "login.html";
+                }
+            },
+            error: function() {
+                // 处理请求失败的情况
+                console.log('请求失败');
+            }
+        }) 
+        function judge(businessState){
+            if(businessState==-1){
+                return "该商品已下架，请移出购物车！";
+            }
+            else if(businessState==1){
+                return "该商品已售出，请移出购物车！";
+            }
+            return "";
+        }
+     </script>
+</body>
+</html>

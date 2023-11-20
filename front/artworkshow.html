@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>艺术品展示</title>
+    <link rel="stylesheet" href="./css/artworkshow.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+</head>
+<body>
+    <!-- 导航栏预留 -->
+    <iframe src="navbar.html" frameborder="0" width="100%" height="100" name="navbar" title="导航栏"></iframe>
+
+    <!-- 艺术品展示 -->
+    <div class="artwork">
+        <!-- 展示图片 -->
+        <div class="left">
+        </div>
+        <!-- 展示信息 -->
+        <div class="right">
+        </div>
+
+    </div>
+
+    <!-- 评论区 -->
+    <div class="comment clearfix">
+        <h1>评论区</h1>
+        <!-- 发布评论 -->
+        <input type="text" id="comment",name="comment" placeholder="快来发布你的精彩评论吧！">
+        <button id="issueBtn" aria-label="发布评论">发布</button>
+
+        <!-- 展示评论 -->
+        <div class="commentShow">
+        </div>
+
+    </div>
+
+    <div class="hidden-footer">
+
+    </div>
+    
+    <!-- 版权 -->
+    <div class="footer">
+       <div class="wrapper">
+           <p>卿云交易网致力于为用户提供一流的交易服务体验。<br>
+               © 2023年FDU Tch.保留所有权利。-沪ICP备23000001号</p>
+       </div>
+   </div>
+
+    <script>
+        var $ = window.jQuery
+        //从请求的url中获取艺术品的id
+        const urlSearchParams=new URLSearchParams(window.location.search);
+        const params=Object.fromEntries(urlSearchParams.entries());
+        const id=params.id;
+        //生成访问记录
+        $.ajax({
+            type:'POST',
+            url:'http://localhost:81/addVisitRecorder.php',
+            data:$.param({
+                artworkId:id
+            }),
+            contentType: 'application/x-www-form-urlencoded',
+            crossDomain: true,
+            dataType: 'json',
+            xhrFields:{
+                withCredentials:true
+            },
+            success:function(data){
+                console.log(data.state);
+            },
+            error:function(){
+                window.location.href="exception.html";
+                //alert("请求失败");
+            }
+        });    
+        //根据id获取艺术品数据
+        $.ajax({
+                type:'POST',
+                url:'http://localhost:81/getArtworkData.php',
+                data:$.param({
+                    id:id
+                }),
+                contentType: 'application/x-www-form-urlencoded',
+                crossDomain: true,
+                xhrFields:{
+                    withCredentials:true
+                },
+                success: function(data) {
+                    // 处理后端返回的数据
+                    var response=JSON.parse(data);
+                    if(response.state==200){
+                        const left=document.querySelector('.left')
+                        left.innerHTML=` <div class="small-box">
+                                            <img src="${response.data.imagePath}" alt="原图片">
+                                            <div class="hover"></div>
+                                        </div>`;
+                        const right=document.querySelector('.right')
+                        right.innerHTML=`
+                                        <div class="img-box">
+                                            <img src="${response.data.imagePath}" alt="放大图片">
+                                        </div>
+                                        <div class="title">
+                                            <h1>《${response.data.workname}》</h1>
+                                        </div>
+                                        <!-- 作者 -->
+                                        <div class="author">
+                                            <p id="label">作者</p>
+                                            <p id="content">${response.data.author}</p>
+                                        </div>
+                                        <!-- 年份 -->
+                                        <div class="year">
+                                            <p id="label">年份</p>
+                                            <p id="content">${response.data.year}</p>
+                                        </div>
+                                        <!-- 尺寸 -->
+                                        <div class="width">
+                                            <p id="label">宽度</p>
+                                            <p id="content">${response.data.width}</p>
+                                        </div>
+                                        <div class="height">
+                                            <p id="label">高度</p>
+                                            <p id="content">${response.data.height}</p>
+                                        </div>
+                                        <!-- 风格 -->
+                                        <div class="style">
+                                            <p id="label">风格</p>
+                                            <p id="content">${response.data.style}</p>
+                                        </div>
+                                        <!-- 价格 -->
+                                        <div class="price">
+                                            <p id="label">价格</p>
+                                            <p id="content">${response.data.price}</p>
+                                        </div>
+                                        <!-- 访问量 -->
+                                        <div class="visited">
+                                            <p id="label">访问量</p>
+                                            <p id="content">${response.data.visited}</p>
+                                        </div>
+                                        <!-- 发布者 -->
+                                        <div class="ownername">
+                                            <p id="label">发布者</p>
+                                            <p id="content">${response.ownername}</p>
+                                        </div>
+                                        <!-- 发布日期 -->
+                                        <div class="date">
+                                            <p id="label">发布日期</P>
+                                            <p id="content">${response.data.issueTime.substr(0,10)}</p>
+                                        </div>
+                                        <!-- 是否出售 -->
+                                        <div class="available">
+                                            <p id="label">是否售出</p>
+                                            <p id="content">${IsAvailable(response.data.soldState)}</p>
+                                        </div>
+                                        <!-- 简介 -->
+                                        <div class="introduction">
+                                            <p id='label'>简介</p>
+                                            <div class="content">
+                                                ${response.data.introduction}
+                                            </div>
+                                        </div>
+                                        <div class="addshoppinglist">
+                                            <button id="addBtn" aria-label="加入购物车">加入购物车</button>
+                                        </div>`
+                        const addshoppinglist=document.querySelector('.addshoppinglist')
+                        if(response.data.soldState==0){
+                            addshoppinglist.style.display='block'
+                        }
+                        if(response.data.soldState==1){
+                            addshoppinglist.style.display='none'
+                        }
+                        //添加购物车操作
+                        const addBtn=document.getElementById('addBtn');
+                        addBtn.addEventListener('click',function(){
+                            $.ajax({
+                                type:'POST',
+                                url:'http://localhost:81/addShoppinglist.php',
+                                data:$.param({
+                                    artworkId:id
+                                }),
+                                contentType: 'application/x-www-form-urlencoded',
+                                crossDomain: true,
+                                dataType: 'json',
+                                xhrFields:{
+                                    withCredentials:true
+                                },
+                                success:function(data){
+                                    if(data.logged_in){
+                                        alert(data.message);
+                                    }
+                                    else{
+                                        alert("添加购物车前请先登录");
+                                    }
+                                },
+                                error:function(){
+                                    alert("请求失败");
+                                }
+                            });    
+                        })
+                    }
+                    else{
+                        window.location.href="exception.html";
+                    }
+                },
+                error: function() {
+                    // 处理请求失败的情况
+                    //console.log('请求失败');
+                    window.location.href="exception.html";
+                }
+            });
+        function IsAvailable(soldState){
+            var str="";
+            if(soldState==0){
+                str+='否'
+            }
+            else{
+                str+='是'
+            }
+            return str
+        }
+        //图片局部放大
+        window.onload = function() {
+            var smallBox=document.querySelector(".artwork .small-box")
+            var imgSmall=document.querySelector(".artwork .left img");
+            var hover=document.querySelector('.artwork .left .hover');
+            var imgBox=document.querySelector('.right .img-box');
+            var imgBig=document.querySelector('.artwork .right .img-box img')
+            smallBox.style.height=imgSmall.offsetHeight+'px';
+            imgBox.style.height=imgSmall.offsetHeight+'px';
+            hover.style.height=imgSmall.offsetHeight/2+'px';
+            smallBox.addEventListener("mouseenter",function(){
+            hover.style.display='block';
+            imgBox.style.display='block'; 
+            })
+            smallBox.addEventListener("mouseleave",function(){
+                hover.style.display='none';
+                imgBox.style.display='none';
+            })
+            smallBox.onmousemove=function(e){
+                e=e||window.event;
+                var x = e.clientX - smallBox.offsetLeft+smallBox.offsetWidth/2-hover.offsetWidth/2;
+                // var x=e.clientX-hover.offsetWidth;
+                //var y = e.clientY -hover.offsetHeight;
+                var scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+                var y=e.clientY+scrollTop-smallBox.offsetTop+smallBox.offsetHeight/2-hover.offsetHeight/2;
+                // console.log(x);
+                // console.log(y);
+                //console.log(e.clientY);
+                if(x<0){
+                    x=0;
+                }
+                if(x>smallBox.offsetWidth-hover.offsetWidth){
+                    x=smallBox.offsetWidth-hover.offsetWidth;
+                }
+                if(y<0){
+                    y=0;
+                }
+                if(y>smallBox.offsetHeight-hover.offsetHeight){
+                    y=smallBox.offsetHeight-hover.offsetHeight;
+                }
+                // console.log(x);
+                // console.log(y);
+                hover.style.left=x+'px';
+                hover.style.top=y+'px';
+                imgBig.style.left=-2*x+'px';
+                imgBig.style.top=-2*y+'px';
+            }
+        }
+        //评论区
+
+        //接收评论和评论回复并展示
+        $.ajax({
+            type:'POST',
+            url:'http://localhost:81/getCommentAndReply.php',
+            data:$.param({
+                artworkId:id
+            }),
+            contentType: 'application/x-www-form-urlencoded',
+            crossDomain: true,
+            dataType: 'json',
+            xhrFields:{
+                withCredentials:true
+            },
+            success:function(data){
+                if(data.state==200){
+                    var comment=new Array();
+                    var reply=new Array();
+                    comment=data.comment;
+                    comment.forEach(c=>{
+                        if(c.deleteState==-1){
+                            c.content="此评论已删除！";
+                        }
+                    })
+                    reply=data.reply;
+                    reply.forEach(r=>{
+                        if(r.deleteState==-1){
+                            r.content="此评论已删除！";
+                        }
+                    })
+                    const commentShow=document.querySelector('.commentShow')
+                    //遍历comment数组
+                    comment.forEach(c=>{
+                        const commentHtml = `
+                            <div class="comment">
+                                <div class="comment-part">
+                                    <div class="comment-header">
+                                        <span class="username">${c.username}</span>
+                                        ：
+                                    </div>
+                                    <div class="${c.deleteState==-1?'deleted-comment-content':'comment-content'}">${c.content}</div>
+                                    <div class="comment-footer">
+                                        <span class="time">${c.issueTime}</span>
+                                        <span class="likes">
+                                            <button class="${c.likeState==0?'notLiked':'haveLiked'}" data-type=1 data-id="${c.id}" data-likes="${c.likes}" data-likestate="${c.likeState}" aria-label="点赞"><i class="fas fa-heart"></i></button>&nbsp;
+                                            ${c.likes} </span>
+                                        <button class="reply-btn" data-id="${c.id}" data-username="${c.username}" aria-label="回复">回复</button>
+                                        ${c.deleteState == 1 ? `<button class="delete-btn" data-type=1 data-id="${c.id}" aria-label="删除">删除</button>` : ''}
+                                    </div>
+                                </div>
+                                <div class="reply-section" data-comment-id="${c.id}"></div>
+                            </div>`
+                        commentShow.innerHTML += commentHtml;
+                    });
+                     //遍历reply数组
+                    reply.forEach(r => {
+                        const replySection = document.querySelector(`[data-comment-id="${r.commentId}"]`);
+                        const replyHtml = `
+                            <div class="reply">
+                                <div class="reply-header">
+                                    <span class="username">
+                                        <span class="from">${r.fromName}</span>
+                                        回复
+                                        <span class="to">${r.toName}</span>
+                                        ：
+                                        <span class="${r.deleteState==-1?'deleted-reply-content':'reply-content'}">${r.content}</span>
+                                    </span>
+                                </div>
+                                <div class="reply-footer">
+                                    <span class="time">${r.issueTime}</span>
+                                    <span class="likes">
+                                        <button class="${r.likeState==0?'notLiked':'haveLiked'}" data-type=2 data-id="${r.id}" data-likes="${r.likes}" data-likestate="${r.likeState}" aria-label="点赞"><i class="fas fa-heart"></i></button>&nbsp;
+                                        ${r.likes}</span>
+                                    <button class="reply-btn" data-id="${r.commentId}" data-username="${r.fromName}" aria-label="回复">回复</button>
+                                    ${r.deleteState == 1 ? `<button class="delete-btn" data-type=2 data-id="${r.id}" aria-label="删除">删除</button>` : ''}
+                                </div>
+                            </div>`;
+                        replySection.innerHTML += replyHtml;
+                    });
+                    //回复
+                    const replyBtns=document.querySelectorAll('.reply-btn');
+                    for(let i=0;i<replyBtns.length;i++){
+                        const replyBtn=replyBtns[i];
+                        replyBtn.addEventListener('click',function(){
+                            const commentId=replyBtn.dataset.id;
+                            const toName=replyBtn.dataset.username;
+                            const replySection=document.querySelector(`[data-comment-id="${commentId}"]`);
+                            const replyForm=document.querySelector('.comment-reply-form');
+                            if(replyForm){
+                                replyForm.remove();
+                            }
+                            else{
+                                const commentReplyHtml=`
+                                    <form class="comment-reply-form" id="comment-reply-form-${i}">
+                                        <textarea class="reply-content" placeholder="回复 @${toName}:"></textarea>
+                                        <button class="reply-submit" type="submit" aria-label="发布评论">发布</button>
+                                    </form>`;
+                                replySection.insertAdjacentHTML('beforeend',commentReplyHtml);
+                                const replySubmit=document.querySelector(`#comment-reply-form-${i} .reply-submit`);
+                                replySubmit.addEventListener('click',function(){
+                                    event.preventDefault();
+                                    const replyContent=document.querySelector(`#comment-reply-form-${i} .reply-content`).value;
+                                    if(replyContent.trim()==""){
+                                        alert("回复内容为空！");
+                                        return;
+                                    }
+                                    //发送请求
+                                    $.ajax({
+                                        type:'POST',
+                                        url:'http://localhost:81/issueReply.php',
+                                        data:{
+                                            commentId:commentId,
+                                            artworkId:id,
+                                            content:replyContent,
+                                            toName:toName
+                                        },
+                                        contentType: 'application/x-www-form-urlencoded',
+                                        crossDomain: true,
+                                        dataType:'json',
+                                        xhrFields:{
+                                            withCredentials:true
+                                        },
+                                        success: function(data) {
+                                            // 处理后端返回的数据
+                                            if(data.logged_in){
+                                                alert(data.message);
+                                                location.reload();
+                                            }
+                                            else{
+                                                alert("发布回复前请先登录！");
+                                            }
+                                        },
+                                        error: function() {
+                                            // 处理请求失败的情况
+                                            console.log('请求失败');
+                                        }
+                                    });
+                                })
+                            }
+                        })
+                    }
+                    //点赞
+                    const likeBtns=document.querySelectorAll(".likes button");
+                    for(let i=0;i<likeBtns.length;i++){
+                        const likeBtn=likeBtns[i];
+                        likeBtn.addEventListener('click',function(){
+                            const type=likeBtn.dataset.type;
+                            const likeId=likeBtn.dataset.id;
+                            var likes=likeBtn.dataset.likes;
+                            const likeState=likeBtn.dataset.likestate;
+                            if(likeState==1){
+                                likes--;
+                            }
+                            else if(likeState==0){
+                                likes++;
+                            }
+                            //发送请求
+                            $.ajax({
+                                type:'POST',
+                                url:'http://localhost:81/likeRequest.php',
+                                data:{
+                                    type:type,
+                                    id:likeId,
+                                    likes:likes,
+                                    likeState:likeState
+                                },
+                                contentType: 'application/x-www-form-urlencoded',
+                                crossDomain: true,
+                                dataType:'json',
+                                xhrFields:{
+                                    withCredentials:true
+                                },
+                                success: function(data) {
+                                    // 处理后端返回的数据
+                                    if(data.logged_in){
+                                        if(data.state==200){
+                                            location.reload();
+                                        }
+                                        else{
+                                            alert(data.message);
+                                        }
+                                    }
+                                    else{
+                                        alert("点赞前请先登录！");
+                                    }
+                                },
+                                error: function() {
+                                    // 处理请求失败的情况
+                                    console.log('请求失败');
+                                }
+                            });
+                        })
+                    }
+                    //删除评论
+                    const deleteBtns=document.querySelectorAll('.delete-btn');
+                    for(let i=0;i<deleteBtns.length;i++){
+                        const deleteBtn=deleteBtns[i];
+                        deleteBtn.addEventListener('click',function(){
+                            const type=deleteBtn.dataset.type;
+                            const deleteId=deleteBtn.dataset.id;
+                            const confirmDialog=confirm("确认删除吗？");
+                            if(confirmDialog==true){
+                                //发送请求
+                                $.ajax({
+                                    type:'POST',
+                                    url:'http://localhost:81/deleteComment.php',
+                                    data:{
+                                        type:type,
+                                        id:deleteId
+                                    },
+                                    contentType: 'application/x-www-form-urlencoded',
+                                    crossDomain: true,
+                                    dataType:'json',
+                                    xhrFields:{
+                                        withCredentials:true
+                                    },
+                                    success: function(data) {
+                                        // 处理后端返回的数据
+                                        if(data.state==200){
+                                            alert(data.message);
+                                            location.reload();
+                                        }
+                                        else{
+                                            alert(data.message);
+                                        }
+                                    },
+                                    error: function() {
+                                        // 处理请求失败的情况
+                                        console.log('请求失败');
+                                    }
+                                });
+                            }
+                        })
+                    }
+                }
+            },
+            error:function(){
+                alert("请求失败");
+            }
+        });    
+
+        //发布评论
+        const issueBtn=document.getElementById('issueBtn');
+        issueBtn.addEventListener('click',function(){
+            const comment=document.getElementById('comment').value;
+            if(comment.trim()==""){
+                alert("评论内容为空！");
+                return;
+            }
+            //发送请求
+            $.ajax({
+                type:'POST',
+                url:'http://localhost:81/issueComment.php',
+                data:{
+                    artworkId:id,
+                    content:comment
+                },
+                contentType: 'application/x-www-form-urlencoded',
+                crossDomain: true,
+                dataType:'json',
+                xhrFields:{
+                    withCredentials:true
+                },
+                success: function(data) {
+                    // 处理后端返回的数据
+                    if(data.logged_in){
+                        alert(data.message);
+                        location.reload();
+                    }
+                    else{
+                        alert("发布评论前请先登录！");
+                    }
+                },
+                error: function() {
+                    // 处理请求失败的情况
+                    console.log('请求失败');
+                }
+            });
+        })
+    </script>
+</body>
+</html>

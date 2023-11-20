@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户中心</title>
+    <link rel="stylesheet" href="./css/usercenter.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <!-- 导航栏预留 -->
+    <iframe src="navbar.html" frameborder="0" width="100%" height="100" name="navbar" title="导航栏"></iframe>
+
+    <div class="userdata clearfix">
+        <!-- 用户基本信息 -->
+        <div class="left">
+            <h1>我的个人信息</h1>
+            <div class="information">
+                <div class="username">
+                    <span id="usernamespan"></span>
+                </div>
+                <div class="email">
+                    <span id="emailspan"></span>
+                </div>
+                <div class="telephone">
+                    <span id="telephonespan"></span>
+                </div>
+                <div class="address">
+                    <span id="addressspan"></span>
+                </div>
+                <div class="gender">
+                    <span id="genderspan"></span>
+                </div>
+                <div class="birthday">
+                    <span id="birthdayspan"></span>
+                </div>
+                <div class="pocket">
+                    <span id="pocketspan"></span>
+                </div>
+                <div class="rechargearea">
+                    <label for="amount">充值：</label>
+                    <input type="text" id="amount" name="amount">
+                    <button id="recharge" aria-label="充值">提交</button>
+                </div>
+            </div>
+            <a href="modifyUserData.html" class="modifyUserData">修改个人信息</a>
+            <a href="modifyPassword.html" class="modifyPassword">修改密码</a>
+            <div class="visitrecorder">
+                <h2>最近访问</h2>
+                <div class="visitdata"></div>
+            </div>
+        </div>
+
+        <!-- 用户发布和订单数据 -->
+        <div class="right">
+            <!-- 已发布 -->
+            <div class="issue">
+                <h1>已发布艺术品</h1>
+                <table class="tab" border="1" cellspacing="0" cellpadding="0">
+                    <tr>
+                        <th>编号</th>
+                        <th>艺术品名字</th>
+                        <th>发布时间</th>
+                        <th>最近修改</th>
+                        <th>修改</th>
+                        <th>删除</th>
+                    </tr>
+                </table>
+            </div>
+            <!-- 已出售 -->
+            <div class="sold">
+                <h1>已出售艺术品</h1>
+                <table class="tab" border="1" cellspacing="0" cellpadding="0">
+                    <tr>
+                        <th>编号</th>
+                        <th>艺术品名字</th>
+                        <th>出售时间</th>
+                    </tr>
+
+                </table>
+            </div>
+            <!-- 已下单 -->
+            <div class="order">
+                <h1>已下单艺术品</h1>
+                <table class="tab" border="1" cellspacing="0" cellpadding="0">
+                    <tr>
+                        <th>编号</th>
+                        <th>艺术品名字</th>
+                        <th>下单时间</th>
+                        <th>价格</th>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="hidden-footer">
+
+    </div>
+
+     <!-- 版权 -->
+     <div class="footer">
+        <div class="wrapper">
+            <p>卿云交易网致力于为用户提供一流的交易服务体验。<br>
+                © 2023年FDU Tch.保留所有权利。-沪ICP备23000001号</p>
+        </div>
+    </div>
+    <script>
+        var $ = window.jQuery;
+        // 导入用户数据
+        const username=document.getElementById("usernamespan")
+        const email=document.getElementById("emailspan")
+        const telephone=document.getElementById("telephonespan")
+        const address=document.getElementById("addressspan")
+        const gender=document.getElementById("genderspan")
+        const birthday=document.getElementById("birthdayspan")
+        const pocket=document.getElementById("pocketspan")
+        $.ajax({
+            url: 'http://localhost:81/getUserData.php',
+            type: 'GET',
+            dataType: 'json',
+            crossDomain: true,
+            xhrFields:{
+                withCredentials:true
+            },
+            success: function(data){
+                //var response=JSON.parse(data);
+                //登录成功
+                if(data.logged_in){
+                    if(data.state==200){
+                        username.innerHTML=`用户名：${data.data.username}`
+                        email.innerHTML=`邮箱：${data.data.email}`
+                        telephone.innerHTML=`电话号码：${data.data.phone}`
+                        address.innerHTML=`地址：${data.data.address}`
+                        birthday.innerHTML=`生日：${data.data.birthday}`
+                        if(data.data.gender==1){
+                            gender.innerHTML='性别：男';
+                        }
+                        else{
+                            gender.innerHTML='性别：女';
+                        }
+                        pocket.innerHTML=`余额：${data.data.pocket}￥`;
+                    }
+                    else{
+                        alert(data.message);
+                    }
+                }
+                //未登录
+                else{
+                    window.location.href = "login.html";
+                }
+            },
+            error: function() {
+                // 处理请求失败的情况
+                console.log('请求失败');
+            }
+        })    
+        //充值
+        const amountInput=document.getElementById("amount")
+        const rechargeBtn=document.getElementById('recharge')
+        rechargeBtn.addEventListener('click',function(){
+            const amount=amountInput.value;
+            if(amount.trim()==""){
+                return;
+            }
+            if(!checkPocket(amount)){
+                alert("请充值正整数金额！");
+                return;
+            }
+            //弹出确认框
+            const confirmDialog=confirm(`确认充值${amount}元吗？`);
+            if(confirmDialog==true){
+                $.ajax({
+                type:'POST',
+                url:'http://localhost:81/recharge.php',
+                data:{
+                    amount:parseInt(amount)
+                },
+                dataType: "json",
+                contentType: 'application/x-www-form-urlencoded',
+                crossDomain: true,
+                xhrFields:{
+                    withCredentials:true
+                },
+                success: function(data) {
+                    // 处理后端返回的数据
+                    if(data.state==200){
+                        alert(data.message);
+                        location.reload();
+                    }
+                    else{
+                        alert(data.message);
+                    }
+                },
+                error: function() {
+                    // 处理请求失败的情况
+                    console.log('请求失败');
+                }
+             });
+            }
+        })
+        //获取最近的访问记录
+        var visitRecorder=new Array();
+        $.ajax({
+            url: 'http://localhost:81/getNewestVisitRecorder.php',
+            type: 'GET',
+            dataType: 'json',
+            crossDomain: true,
+            xhrFields:{
+                withCredentials:true
+            },
+            success: function(data){
+                visitRecorder=data.data;
+                var visitdata=document.querySelector('.visitdata');
+                for(let i=0;i<visitRecorder.length;i++){
+                    const tr=document.createElement('tr');
+                    tr.innerHTML=`<td>${visitRecorder[i].workname}</td>
+                                  <td>${visitRecorder[i].visitTime}</td>`;
+                    visitdata.appendChild(tr);
+                }
+
+            },
+            error: function() {
+                // 处理请求失败的情况
+                console.log('请求失败');
+            }
+        })    
+        //已发布艺术品
+        $.ajax({
+            url: 'http://localhost:81/getIssuedArtwork.php',
+            type: 'GET',
+            dataType: 'json',
+            crossDomain: true,
+            xhrFields:{
+                withCredentials:true
+            },
+            success: function(data){
+                //var response=JSON.parse(data);
+                //登录成功
+                if(data.logged_in){
+                    if(data.state==200){
+                        const table1=document.querySelector(".issue .tab")
+                        for(let i=0;i<data.data.length;i++){
+                            const tr1=document.createElement('tr')
+                            tr1.innerHTML=`<td>${i+1}</td>
+                                        <td>${data.data[i].workname}</td>
+                                        <td>${data.data[i].issueTime}</td>
+                                        <td>${data.data[i].fixTime}</td>
+                                        <td><a href="modify.html?id=${data.data[i].id}" class="modifyArtwork">修改</a></td>
+                                        <td><button class="delete-button" data-id=${data.data[i].id} aria-label="删除">删除</td>`
+                            table1.appendChild(tr1)
+                        }
+                        // 获取所有删除按钮元素，并为其绑定点击事件监听器
+                        var deleteButtons = document.querySelectorAll(".delete-button");
+                        for (var i = 0; i < deleteButtons.length; i++) {
+                            deleteButtons[i].addEventListener('click',function(event){
+                                const confirmDialog=confirm("确认删除吗？");
+                                if(confirmDialog==true){
+                                    var id=event.target.getAttribute("data-id");//获取艺术品id
+                                    // 向后端发送请求
+                                    $.ajax({
+                                        type:'POST',
+                                        url:'http://localhost:81/deleteArtwork.php',
+                                        data:{
+                                            id:id
+                                        },
+                                        contentType: 'application/x-www-form-urlencoded',
+                                        dataType: 'json',
+                                        crossDomain: true,
+                                        xhrFields:{
+                                            withCredentials:true
+                                        },
+                                        success: function(data) {
+                                            alert(data.message);
+                                            location.reload();
+                                        },
+                                        error: function() {
+                                            // 处理请求失败的情况
+                                            console.log('请求失败');
+                                        }
+                                    });
+                                }
+                            })
+                        }
+                    }
+                    else{
+                        alert(data.message);
+                    }
+                }
+                //未登录
+                else{
+                    window.location.href = "login.html";
+                }
+            },
+            error: function() {
+                // 处理请求失败的情况
+                console.log('请求失败');
+            }
+        }) 
+        //已售出艺术品
+        $.ajax({
+            url: 'http://localhost:81/getSoldArtwork.php',
+            type: 'GET',
+            dataType: 'json',
+            crossDomain: true,
+            xhrFields:{
+                withCredentials:true
+            },
+            success: function(data){
+                //var response=JSON.parse(data);
+                //登录成功
+                if(data.logged_in){
+                    if(data.state==200){
+                        const table2=document.querySelector(".sold .tab")
+                        for(let i=0;i<data.data.length;i++){
+                            const tr2=document.createElement('tr')
+                            tr2.innerHTML=` <td>${i+1}</td>
+                                            <td>${data.data[i].workname}</td>
+                                            <td>${data.data[i].soldTime}</td>`
+                            table2.appendChild(tr2)
+                        }
+                    }
+                    else{
+                        alert(data.message);
+                    }
+                }
+                //未登录
+                else{
+                    window.location.href = "login.html";
+                }
+            },
+            error: function() {
+                // 处理请求失败的情况
+                console.log('请求失败');
+            }
+        })    
+        //已下单艺术品
+        $.ajax({
+            url: 'http://localhost:81/getOrderArtwork.php',
+            type: 'GET',
+            dataType: 'json',
+            crossDomain: true,
+            xhrFields:{
+                withCredentials:true
+            },
+            success: function(data){
+                //var response=JSON.parse(data);
+                //登录成功
+                if(data.logged_in){
+                    if(data.state==200){
+                        const table3=document.querySelector(".order .tab")
+                        for(let i=0;i<data.data.length;i++){
+                            const tr3=document.createElement('tr')
+                            tr3.innerHTML=` <td>${i+1}</td>
+                                            <td>${data.data[i].workname}</td>
+                                            <td>${data.data[i].orderTime}</td>
+                                            <td>${data.data[i].price}￥</td>`
+                            table3.appendChild(tr3)
+                        }
+                    }
+                    else{
+                        alert(data.message);
+                    }
+                }
+                //未登录
+                else{
+                    window.location.href = "login.html";
+                }
+            },
+            error: function() {
+                // 处理请求失败的情况
+                console.log('请求失败');
+            }
+        })    
+         // 判断是不是正整数
+         function checkPocket(str){
+            var regex=/^[1-9]\d*$/
+            return regex.test(str)
+        }
+    </script>
+</body>
+</html>

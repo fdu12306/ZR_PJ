@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="./css/search.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <title>搜索</title>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <iframe src="navbar.html" frameborder="0" width="100%" height="100" name="navbar" title="导航栏"></iframe>
+
+    <div class="wrapper">
+          <!-- 搜索框 -->
+        <div class="search .clearfix">
+            <form>
+                <input type="text" id="searchInput" placeholder="请输入关键词">
+                <select id="searchType">
+                    <option value="0">请选择搜索范围</option>
+                    <option value="1">根据艺术品名字</option>
+                    <option value="2">根据作者名字</option>
+                    <option value="3">根据艺术品风格</option>
+                </select>
+                <button type="submit" id="searchBtn" aria-label="搜索"><i class="fas fa-search"></i></button>
+            </form>
+        </div>
+    </div>
+
+    <div class="wrapper">
+        <div class="sort">
+            <select id="sort-by">
+                <option value="0">请选择排序方式</option>
+                <option value="price-asc">价格从低到高</option>
+                <option value="price-desc">价格从高到低</option>
+                <option value="visited-asc">访问量从低到高</option>
+                <option value="visited-desc">访问量从高到低</option>
+                <option value="year-asc">年份从低到高</option>
+                <option value="year-desc">年份从高到低</option>
+                <option value="time-asc">发布时间从早到晚</option>
+                <option value="time-desc">发布时间从晚到早</option>
+            </select>
+            <span id="result-num"></span>
+        </div>
+    </div>
+
+    <div class="wrapper">
+         <!-- 艺术品展示 -->
+        <div class="artwork-container"></div>
+
+        <!-- 分页展示 -->
+        <div class="pagination-container"></div>
+    </div>
+
+
+    <div class="hidden-footer"> 
+
+    </div>
+
+     <!--版权 -->
+    <div class="footer">
+        <div class="wrapper">
+            <p>卿云交易网致力于为用户提供一流的交易服务体验。<br>
+                © 2023年FDU Tch.保留所有权利。-沪ICP备23000001号</p>
+        </div>
+    </div>
+
+    <script>
+        // 将搜索内容填入搜索框
+        const urlSearchParams=new URLSearchParams(window.location.search);
+        const params=Object.fromEntries(urlSearchParams.entries());
+        const content=params.content;
+        const searchInput=document.getElementById("searchInput");
+        const searchType=document.getElementById("searchType");
+        const searchBtn=document.getElementById("searchBtn");
+        searchInput.value=content;
+        var artworks=new Array();
+        const itemsPerPage = 5;
+        let currentPage = 1;
+        searchBtn.addEventListener('click',function(){
+            event.preventDefault();
+            if(searchInput.value.trim()==""){
+                alert("请输入搜索关键词！");
+                return;
+            }
+            if(searchType.value==0){
+                alert("请选择搜索范围！");
+                return;
+            }
+             //ajax发送请求
+             $.ajax({
+                type:'POST',
+                url:'http://localhost:81/search.php',
+                data:{
+                   content:searchInput.value.trim(),
+                   type:searchType.value
+                },
+                contentType: 'application/x-www-form-urlencoded',
+                dataType: 'json',
+                crossDomain: true,
+                xhrFields:{
+                    withCredentials:true
+                },
+                success: function(data) {
+                    if(data.artwork.length==0){
+                        alert("未查询到结果！");
+                    }
+                    else{
+                        artworks=data.artwork;
+                        const sortBtn=document.getElementById("sort-by");
+                        sortBtn.value=0;
+                        const resultNum=document.getElementById("result-num");
+                        resultNum.innerHTML=`共查询到${artworks.length}条结果`;
+                        currentPage=1;
+                        renderArtworks();
+                        renderPagination();
+                    }
+                },
+                error: function() {
+                    // 处理请求失败的情况
+                    console.log('请求失败');
+                }
+             });
+        })
+
+        //进入该页面时展示所有艺术品
+        $.ajax({
+            url: 'http://localhost:81/getAllArtwork.php',
+            type: 'GET',
+            dataType: 'json',
+            crossDomain: true,
+            xhrFields:{
+                withCredentials:true
+            },
+            success: function(data){
+                artworks=data.data;
+                renderArtworks();
+                renderPagination();
+            },
+            error: function() {
+                // 处理请求失败的情况
+                console.log('请求失败');
+            }
+        })
+
+        //对查询结果进行排序
+        const sortBtn=document.getElementById("sort-by");
+        sortBtn.addEventListener('change',function(){
+            sortResults(sortBtn.value);
+            currentPage=1;
+            renderArtworks();
+            renderPagination();
+        })
+
+        function sortResults(sortBy) {
+            switch (sortBy) {
+                case 'price-asc':
+                    artworks.sort((a, b) => a.price - b.price);
+                    break;
+                case 'price-desc':
+                    artworks.sort((a, b) => b.price - a.price);
+                    break;
+                case 'visited-asc':
+                    artworks.sort((a, b) => a.visited - b.visited);
+                    break;
+                case 'visited-desc':
+                    artworks.sort((a, b) => b.visited - a.visited);
+                    break;
+                case 'year-asc':
+                    artworks.sort((a,b)=>a.year-b.year);
+                    break;
+                case 'year-desc':
+                    artworks.sort((a,b)=>b.year-a.year);
+                    break;
+                case 'time-asc':
+                    artworks.sort((a,b)=>new Date(a.issueTime)-new Date(b.issueTime));
+                    break;
+                case 'time-desc':
+                    artworks.sort((a,b)=>new Date(b.issueTime)-new Date(a.issueTime));
+                    break;
+                // 可以添加其他排序方式
+            }
+            // renderSearchResults();
+        }
+
+        function renderArtworks() {
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const productsToRender = artworks.slice(startIndex, endIndex);
+            const artworkContainer = document.querySelector('.artwork-container');
+            artworkContainer.innerHTML = '';
+            productsToRender.forEach(artwork => {
+                const productElement = document.createElement('div');
+                productElement.innerHTML = ` 
+                            <div class="artwork">
+                                <div class="img">
+                                    <img src=${artwork.imagePath} alt="艺术品图片">
+                                </div>
+                                <div class="left">
+                                    <h2>《${artwork.workname}》</h2>
+                                    <h3>作者：${artwork.author}</h3>
+                                    <h4>价格：${artwork.price}￥</h4>
+                                    <h4>艺术品风格：${artwork.style}</h4>
+                                    <h4>访问量：${artwork.visited}</h4>
+                                    <h4>年份：${artwork.year}</h4>
+                                </div>
+                                <div class="right">
+                                    <h2>艺术品简介</h2>
+                                    <div class="introduction">
+                                        <p>${artwork.introduction}</p>
+                                    </div>
+                                    <div class="chioce">
+                                        <a href="artworkshow.html?id=${artwork.id}">查看详情</a>
+                                    </div>
+                                </div>
+                            </div>
+                            `
+                artworkContainer.appendChild(productElement);
+            });
+        }
+
+        function renderPagination() {
+            const totalPages = Math.ceil(artworks.length / itemsPerPage);
+            const paginationContainer = document.querySelector('.pagination-container');
+            paginationContainer.innerHTML = '';
+            for (let i = 1; i <= totalPages; i++) {
+                const button = document.createElement('button');
+                button.innerText = i;
+                if (i === currentPage) {
+                    button.classList.add('active');
+                }
+                button.addEventListener('click', () => {
+                    currentPage = i;
+                    renderArtworks();
+                    renderPagination();
+                });
+                paginationContainer.appendChild(button);
+            }
+        }
+    </script>
+</body>
+</html>
